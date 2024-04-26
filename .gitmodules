@@ -1,0 +1,3 @@
+[submodule "accounts/safe7579/lib/ether-email-auth"]
+	path = accounts/safe7579/lib/ether-email-auth
+	url = https://github.com/zkemail/ether-email-auth
