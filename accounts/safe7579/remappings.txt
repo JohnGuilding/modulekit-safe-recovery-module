@@ -13,5 +13,9 @@ solarray/=node_modules/solarray/src/
 @safe-global/=node_modules/@safe-global/
 @ERC4337/=node_modules/@ERC4337/
 @openzeppelin/=node_modules/@openzeppelin/
+@openzeppelin/contracts-upgradeable/=node_modules/@openzeppelin/contracts-upgradeable/
 @prb/math/=node_modules/@prb/math/
 erc4337-validation/=node_modules/erc4337-validation/src/
+ether-email-auth/=lib/ether-email-auth/
+@zk-email/contracts/=node_modules/@zk-email/contracts/
+
