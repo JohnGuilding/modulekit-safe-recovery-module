@@ -97,6 +97,12 @@ interface ISafe {
      */
     function enableModule(address module) external;
 
+    /**
+     * @notice Returns a list of Safe owners.
+     * @return Array of Safe owners.
+     */
+    function getOwners() external view returns (address[] memory);
+
     function VERSION() external view returns (string memory);
 
     function simulateAndRevert(address targetContract, bytes memory calldataPayload) external;
