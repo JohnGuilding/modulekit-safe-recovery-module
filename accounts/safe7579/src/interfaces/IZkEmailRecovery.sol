@@ -98,7 +98,7 @@ interface IZkEmailRecovery {
      * @dev Deletes the recovery request accociated with a account. Assumes
      *      the msg.sender is the account that the recovery request is being deleted for
      */
-    function cancelRecovery() external;
+    function cancelRecovery(bytes calldata data) external;
 
     // TODO: add natspec
     function updateRecoveryDelay(uint256 recoveryDelay) external;

@@ -171,7 +171,7 @@ contract ZkEmailRecovery is EmailAccountRecovery, IZkEmailRecovery {
         address guardian,
         uint templateIdx,
         bytes[] memory subjectParams,
-        bytes32 nullifier
+        bytes32
     ) internal override {
         if (guardian == address(0)) {
             revert InvalidGuardian();
@@ -260,7 +260,7 @@ contract ZkEmailRecovery is EmailAccountRecovery, IZkEmailRecovery {
     }
 
     /// @inheritdoc IZkEmailRecovery
-    function cancelRecovery() external {
+    function cancelRecovery(bytes calldata) external virtual {
         address account = msg.sender;
         delete recoveryRequests[account];
         emit RecoveryCancelled(account);
