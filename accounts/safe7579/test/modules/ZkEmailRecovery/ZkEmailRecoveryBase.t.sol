@@ -11,7 +11,6 @@ import {ECDSA} from "solady/utils/ECDSA.sol";
 import {ZkEmailRecovery} from "src/modules/ZkEmailRecovery/ZkEmailRecovery.sol";
 import {SafeRecoveryModule} from "src/modules/SafeRecoveryModule.sol";
 import {IZkEmailRecovery} from "src/interfaces/IZkEmailRecovery.sol";
-import {IGuardianManager} from "src/interfaces/IGuardianManager.sol";
 import {IEmailAccountRecovery} from "src/modules/ZkEmailRecovery/EmailAccountRecoveryRouter.sol";
 import {MockGroth16Verifier} from "../../mocks/MockGroth16Verifier.sol";
 

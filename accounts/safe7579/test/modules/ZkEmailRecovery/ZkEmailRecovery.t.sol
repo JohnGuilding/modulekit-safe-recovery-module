@@ -13,7 +13,6 @@ import {Safe} from "@safe-global/safe-contracts/contracts/Safe.sol";
 import {ZkEmailRecovery} from "src/modules/ZkEmailRecovery/ZkEmailRecovery.sol";
 import {IEmailAccountRecovery} from "src/modules/ZkEmailRecovery/EmailAccountRecoveryRouter.sol";
 import {IZkEmailRecovery} from "src/interfaces/IZkEmailRecovery.sol";
-import {IGuardianManager} from "src/interfaces/IGuardianManager.sol";
 
 import {ZkEmailRecoveryBase} from "./ZkEmailRecoveryBase.t.sol";
 import {MockGroth16Verifier} from "../../mocks/MockGroth16Verifier.sol";
@@ -67,14 +66,14 @@ contract ZkEmailRecoveryTest is ZkEmailRecoveryBase {
             accountSalt1,
             templateIdx
         );
-        IGuardianManager.GuardianStorage
+        IZkEmailRecovery.GuardianStorage
             memory guardianStorage1 = zkEmailRecovery.getGuardian(
                 accountAddress,
                 guardian1
             );
         assertEq(
             uint256(guardianStorage1.status),
-            uint256(IGuardianManager.GuardianStatus.ACCEPTED)
+            uint256(IZkEmailRecovery.GuardianStatus.ACCEPTED)
         );
         assertEq(guardianStorage1.weight, uint256(1));
 
@@ -88,14 +87,14 @@ contract ZkEmailRecoveryTest is ZkEmailRecoveryBase {
             accountSalt2,
             templateIdx
         );
-        IGuardianManager.GuardianStorage
+        IZkEmailRecovery.GuardianStorage
             memory guardianStorage2 = zkEmailRecovery.getGuardian(
                 accountAddress,
                 guardian2
             );
         assertEq(
             uint256(guardianStorage2.status),
-            uint256(IGuardianManager.GuardianStatus.ACCEPTED)
+            uint256(IZkEmailRecovery.GuardianStatus.ACCEPTED)
         );
         assertEq(guardianStorage2.weight, uint256(1));
 
