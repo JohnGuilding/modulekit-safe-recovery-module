@@ -50,10 +50,12 @@ interface IZkEmailRecovery {
 
     /** Guardian logic errors */
     error SetupAlreadyCalled();
+    error IncorrectNumberOfWeights();
     error ThresholdCannotExceedGuardianCount();
     error ThresholdCannotBeZero();
     error InvalidAccountAddress();
     error InvalidGuardianAddress();
+    error InvalidGuardianWeight();
     error AccountNotConfigured();
     error AddressAlreadyRequested();
     error AddressAlreadyGuardian();

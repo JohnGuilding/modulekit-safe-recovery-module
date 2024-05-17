@@ -25,7 +25,7 @@ contract ZkEmailRecovery is EmailAccountRecovery, IZkEmailRecovery {
 
     /** Account to guardian to guardian status */
     mapping(address => mapping(address => GuardianStorage))
-        internal guardianStorage; // TODO: validate weights
+        internal guardianStorage;
 
     /** Account to guardian storage */
     mapping(address => GuardianConfig) internal guardianConfigs;
@@ -306,16 +306,21 @@ contract ZkEmailRecovery is EmailAccountRecovery, IZkEmailRecovery {
         uint256[] memory weights,
         uint256 threshold
     ) internal {
-        uint256 guardianCount = _guardians.length;
         // Threshold can only be 0 at initialization.
         // Check ensures that setup function can only be called once.
         if (guardianConfigs[account].threshold > 0) {
             revert SetupAlreadyCalled();
         }
 
+        uint256 guardianCount = _guardians.length;
+
         // Validate that threshold is smaller than number of added owners.
         if (threshold > guardianCount) {
             revert ThresholdCannotExceedGuardianCount();
+        }
+
+        if (guardianCount != weights.length) {
+            revert IncorrectNumberOfWeights();
         }
 
         // There has to be at least one Account owner.
@@ -332,6 +337,13 @@ contract ZkEmailRecovery is EmailAccountRecovery, IZkEmailRecovery {
 
             if (_guardian == address(0) || _guardian == address(this)) {
                 revert InvalidGuardianAddress();
+            }
+
+            // As long as weights are 1 or above, there will be enough total weight to reach the
+            // required threshold. This is because we check the guardian count cannot be less
+            // than the threshold and there is an equal amount of guardians to weights.
+            if (weight == 0) {
+                revert InvalidGuardianWeight();
             }
 
             if (_guardianStorage.status == GuardianStatus.REQUESTED) {
@@ -377,6 +389,10 @@ contract ZkEmailRecovery is EmailAccountRecovery, IZkEmailRecovery {
             revert GuardianStatusMustBeDifferent();
         }
 
+        if (_guardianStorage.weight == 0) {
+            revert InvalidGuardianWeight();
+        }
+
         guardianStorage[account][guardian] = GuardianStorage(
             _guardianStorage.status,
             _guardianStorage.weight
@@ -405,6 +421,10 @@ contract ZkEmailRecovery is EmailAccountRecovery, IZkEmailRecovery {
 
         if (_guardianStorage.status == GuardianStatus.ACCEPTED) {
             revert AddressAlreadyGuardian();
+        }
+
+        if (weight == 0) {
+            revert InvalidGuardianWeight();
         }
 
         guardianStorage[account][guardian] = GuardianStorage(
@@ -436,7 +456,7 @@ contract ZkEmailRecovery is EmailAccountRecovery, IZkEmailRecovery {
             revert InvalidGuardianAddress();
         }
 
-        guardianStorage[account][guardian].status = GuardianStatus.NONE;
+        delete guardianStorage[account][guardian];
         guardianConfigs[account].guardianCount--;
 
         emit RemovedGuardian(guardian);
@@ -485,10 +505,7 @@ contract ZkEmailRecovery is EmailAccountRecovery, IZkEmailRecovery {
             GuardianStatus.REQUESTED,
             oldGuardianStorage.weight
         );
-        guardianStorage[account][oldGuardian] = GuardianStorage(
-            GuardianStatus.NONE,
-            0
-        );
+        delete guardianStorage[account][oldGuardian];
 
         emit RemovedGuardian(oldGuardian);
         emit AddedGuardian(newGuardian);
