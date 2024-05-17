@@ -17,6 +17,7 @@ contract SafeRecoveryModule is RecoveryModuleBase {
     /*//////////////////////////////////////////////////////////////////////////
                                     CONSTANTS
     //////////////////////////////////////////////////////////////////////////*/
+    error NotTrustedRecoveryContract();
     error NoPreviousOwnersStored();
 
     struct RecoveryInfo {
@@ -90,6 +91,10 @@ contract SafeRecoveryModule is RecoveryModuleBase {
     }
 
     function recover(address account, address create2Owner) external override {
+        if (msg.sender != zkEmailRecovery) {
+            revert NotTrustedRecoveryContract();
+        }
+
         RecoveryInfo memory addressInfo = recoveryInfo[create2Owner];
 
         if (
