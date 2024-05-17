@@ -58,14 +58,10 @@ contract ZkEmailRecovery is EmailAccountRecovery, IZkEmailRecovery {
         uint256 threshold,
         uint256 recoveryDelay,
         uint256 recoveryExpiry
-    ) external {
+    ) external onlyWhenNotRecovering {
         address account = msg.sender;
 
         setupGuardians(account, guardians, weights, threshold);
-
-        if (recoveryRequests[account].totalWeight > 0) {
-            revert RecoveryInProcess();
-        }
 
         address router = deployRouterForAccount(account);
 
@@ -140,16 +136,12 @@ contract ZkEmailRecovery is EmailAccountRecovery, IZkEmailRecovery {
         uint templateIdx,
         bytes[] memory subjectParams,
         bytes32
-    ) internal override {
+    ) internal override onlyWhenNotRecovering {
         if (guardian == address(0)) revert InvalidGuardian();
         if (templateIdx != 0) revert InvalidTemplateIndex();
         if (subjectParams.length != 1) revert InvalidSubjectParams();
 
         address accountInEmail = abi.decode(subjectParams[0], (address));
-
-        if (recoveryRequests[accountInEmail].totalWeight > 0) {
-            revert RecoveryInProcess();
-        }
 
         GuardianStorage memory guardianStorage = getGuardian(
             accountInEmail,
@@ -314,7 +306,7 @@ contract ZkEmailRecovery is EmailAccountRecovery, IZkEmailRecovery {
     function updateGuardian(
         address guardian,
         GuardianStorage memory _guardianStorage
-    ) external override onlyConfiguredAccount {
+    ) external override onlyConfiguredAccount onlyWhenNotRecovering {
         _updateGuardian(msg.sender, guardian, _guardianStorage);
     }
 
@@ -344,7 +336,7 @@ contract ZkEmailRecovery is EmailAccountRecovery, IZkEmailRecovery {
         address guardian,
         uint256 weight,
         uint256 threshold
-    ) public override onlyConfiguredAccount {
+    ) public override onlyConfiguredAccount onlyWhenNotRecovering {
         address account = msg.sender;
         GuardianStorage memory _guardianStorage = guardianStorage[account][
             guardian
@@ -377,7 +369,7 @@ contract ZkEmailRecovery is EmailAccountRecovery, IZkEmailRecovery {
     function removeGuardian(
         address guardian,
         uint256 threshold
-    ) public override onlyConfiguredAccount {
+    ) public override onlyConfiguredAccount onlyWhenNotRecovering {
         address account = msg.sender;
         // Only allow to remove an guardian, if threshold can still be reached.
         if (guardianConfigs[account].threshold - 1 < threshold)
@@ -399,7 +391,7 @@ contract ZkEmailRecovery is EmailAccountRecovery, IZkEmailRecovery {
     function swapGuardian(
         address oldGuardian,
         address newGuardian
-    ) public override onlyConfiguredAccount {
+    ) public override onlyConfiguredAccount onlyWhenNotRecovering {
         address account = msg.sender;
 
         GuardianStatus newGuardianStatus = guardianStorage[account][newGuardian]
@@ -440,7 +432,7 @@ contract ZkEmailRecovery is EmailAccountRecovery, IZkEmailRecovery {
     // @inheritdoc IZkEmailRecovery
     function changeThreshold(
         uint256 threshold
-    ) public override onlyConfiguredAccount {
+    ) public override onlyConfiguredAccount onlyWhenNotRecovering {
         address account = msg.sender;
         _changeThreshold(account, threshold);
     }
@@ -480,14 +472,20 @@ contract ZkEmailRecovery is EmailAccountRecovery, IZkEmailRecovery {
         return guardianStorage[account][guardian].status != GuardianStatus.NONE;
     }
 
+    /*//////////////////////////////////////////////////////////////////////////
+                                MODIFIERS
+    //////////////////////////////////////////////////////////////////////////*/
     modifier onlyConfiguredAccount() {
-        checkConfigured(msg.sender);
+        if (guardianConfigs[msg.sender].guardianCount == 0)
+            revert AccountNotConfigured();
         _;
     }
 
-    function checkConfigured(address account) internal {
-        bool authorized = guardianConfigs[account].guardianCount > 0;
-        if (!authorized) revert AccountNotConfigured();
+    modifier onlyWhenNotRecovering() {
+        if (recoveryRequests[msg.sender].totalWeight > 0) {
+            revert RecoveryInProcess();
+        }
+        _;
     }
 
     /*//////////////////////////////////////////////////////////////////////////
