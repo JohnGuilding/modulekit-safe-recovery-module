@@ -3,8 +3,8 @@ pragma solidity ^0.8.0;
 
 interface IZkEmailRecovery {
     struct RecoveryConfig {
-        uint256 recoveryDelay; // the time from when recovery is started until the recovery request can be executed
-        uint256 recoveryExpiry; // the time from when recovery is started until the recovery request becomes invalid
+        uint256 delay; // the time from when recovery is started until the recovery request can be executed
+        uint256 expiry; // the time from when recovery is started until the recovery request becomes invalid
     }
     struct RecoveryRequest {
         uint256 executeAfter; // the timestamp from which the recovery request can be executed
@@ -45,6 +45,9 @@ interface IZkEmailRecovery {
     error DelayNotPassed();
     error RecoveryRequestExpired();
 
+    error DelayLessThanExpiry();
+    error RecoveryWindowTooShort();
+
     /** Guardian logic errors */
     error SetupAlreadyCalled();
     error ThresholdCannotExceedGuardianCount();
@@ -62,8 +65,8 @@ interface IZkEmailRecovery {
     /** Events */
     event RecoveryConfigured(
         address indexed account,
-        uint256 recoveryDelay,
-        uint256 recoveryExpiry,
+        uint256 delay,
+        uint256 expiry,
         address router
     );
     event RecoveryInitiated(address indexed account, uint256 executeAfter);
@@ -93,6 +96,14 @@ interface IZkEmailRecovery {
         address account
     ) external view returns (RecoveryConfig memory);
 
+    function configureRecovery(
+        address[] memory guardians,
+        uint256[] memory weights,
+        uint256 threshold,
+        uint256 delay,
+        uint256 expiry
+    ) external;
+
     /**
      * @notice Cancels the recovery process of the sender if it exits.
      * @dev Deletes the recovery request accociated with a account. Assumes
@@ -101,7 +112,9 @@ interface IZkEmailRecovery {
     function cancelRecovery(bytes calldata data) external;
 
     // TODO: add natspec
-    function updateRecoveryDelay(uint256 recoveryDelay) external;
+    function updateRecoveryConfig(
+        RecoveryConfig calldata recoveryConfig
+    ) external;
 
     /*//////////////////////////////////////////////////////////////////////////
                                 GUARDIAN LOGIC

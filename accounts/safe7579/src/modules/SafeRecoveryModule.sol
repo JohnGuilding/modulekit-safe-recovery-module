@@ -7,6 +7,7 @@ import {ModeLib} from "erc7579/lib/ModeLib.sol";
 import {EmailAuth} from "ether-email-auth/packages/contracts/src/EmailAuth.sol";
 import {Create2} from "@openzeppelin/contracts/utils/Create2.sol";
 import {RecoveryModuleBase} from "./RecoveryModuleBase.sol";
+import {IZkEmailRecovery} from "../interfaces/IZkEmailRecovery.sol";
 
 interface ISafe {
     function getOwners() external view returns (address[] memory);
@@ -38,8 +39,24 @@ contract SafeRecoveryModule is RecoveryModuleBase {
      * @param data The data to initialize the module with
      */
     function onInstall(bytes calldata data) external override {
-        // address oldOwner = abi.decode(data, (address));
-        // oldOwners[msg.sender] = oldOwner;
+        (
+            address[] memory guardians,
+            uint256[] memory weights,
+            uint256 threshold,
+            uint256 delay,
+            uint256 expiry
+        ) = abi.decode(data, (address[], uint256[], uint256, uint256, uint256));
+
+        bytes memory encodedCall = abi.encodeWithSignature(
+            "configureRecovery(address[],uint256[],uint256,uint256,uint256)",
+            guardians,
+            weights,
+            threshold,
+            delay,
+            expiry
+        );
+
+        _execute(msg.sender, zkEmailRecovery, 0, encodedCall);
     }
 
     /**
@@ -62,9 +79,6 @@ contract SafeRecoveryModule is RecoveryModuleBase {
     /*//////////////////////////////////////////////////////////////////////////
                                      MODULE LOGIC
     //////////////////////////////////////////////////////////////////////////*/
-    error CannotOverwriteOldOwner();
-    error InvalidSignature();
-    // storeOwner implementation for a Safe recovery module - the value we need to store for later is the old owner address
 
     function storeOwner(
         address account,

@@ -5,7 +5,7 @@ import {PackedUserOperation} from "@rhinestone/modulekit/src/external/ERC4337.so
 import {EmailAccountRecovery} from "ether-email-auth/packages/contracts/src/EmailAccountRecovery.sol";
 import {IZkEmailRecovery} from "../../interfaces/IZkEmailRecovery.sol";
 import {EmailAccountRecoveryRouter} from "./EmailAccountRecoveryRouter.sol";
-
+import "forge-std/console2.sol";
 interface IRecoveryModule {
     function recover(address account, address newOwner) external;
 }
@@ -14,6 +14,8 @@ contract ZkEmailRecovery is EmailAccountRecovery, IZkEmailRecovery {
     /*//////////////////////////////////////////////////////////////////////////
                                     CONSTANTS
     //////////////////////////////////////////////////////////////////////////*/
+
+    uint256 constant MINIMUM_RECOVERY_WINDOW = 1 days;
 
     /** Mapping of account address to recovery delay */
     mapping(address => RecoveryConfig) public recoveryConfigs;
@@ -52,12 +54,13 @@ contract ZkEmailRecovery is EmailAccountRecovery, IZkEmailRecovery {
     /**
      * Initialize the module with the given data
      */
+    /// @inheritdoc IZkEmailRecovery
     function configureRecovery(
         address[] memory guardians,
         uint256[] memory weights,
         uint256 threshold,
-        uint256 recoveryDelay,
-        uint256 recoveryExpiry
+        uint256 delay,
+        uint256 expiry
     ) external onlyWhenNotRecovering {
         address account = msg.sender;
 
@@ -65,12 +68,11 @@ contract ZkEmailRecovery is EmailAccountRecovery, IZkEmailRecovery {
 
         address router = deployRouterForAccount(account);
 
-        recoveryConfigs[account] = RecoveryConfig(
-            recoveryDelay,
-            recoveryExpiry
-        );
+        RecoveryConfig memory recoveryConfig = RecoveryConfig(delay, expiry);
+        validateRecoveryConfig(recoveryConfig);
+        recoveryConfigs[account] = recoveryConfig;
 
-        emit RecoveryConfigured(account, recoveryDelay, recoveryExpiry, router);
+        emit RecoveryConfigured(account, delay, expiry, router);
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -210,13 +212,14 @@ contract ZkEmailRecovery is EmailAccountRecovery, IZkEmailRecovery {
         uint256 threshold = getGuardianConfig(accountInEmail).threshold;
         if (recoveryRequest.totalWeight >= threshold) {
             uint256 executeAfter = block.timestamp +
-                recoveryConfigs[accountInEmail].recoveryDelay;
+                recoveryConfigs[accountInEmail].delay;
             uint256 executeBefore = block.timestamp +
-                recoveryConfigs[accountInEmail].recoveryExpiry;
+                recoveryConfigs[accountInEmail].expiry;
 
             recoveryRequest.executeAfter = executeAfter;
             recoveryRequest.executeBefore = executeBefore;
             recoveryRequest.newOwner = newOwnerInEmail;
+            // TODO: consider setting this in configuration
             recoveryRequest.recoveryModule = recoveryModuleInEmail;
 
             emit RecoveryInitiated(accountInEmail, executeAfter);
@@ -267,8 +270,26 @@ contract ZkEmailRecovery is EmailAccountRecovery, IZkEmailRecovery {
     }
 
     /// @inheritdoc IZkEmailRecovery
-    function updateRecoveryDelay(uint256 recoveryDelay) external {
-        // TODO: add implementation
+    function updateRecoveryConfig(
+        RecoveryConfig calldata recoveryConfig
+    ) external onlyWhenNotRecovering {
+        address account = msg.sender;
+        validateRecoveryConfig(recoveryConfig);
+        recoveryConfigs[account] = recoveryConfig;
+    }
+
+    function validateRecoveryConfig(
+        RecoveryConfig memory recoveryConfig
+    ) internal {
+        if (recoveryConfig.delay > recoveryConfig.expiry) {
+            revert DelayLessThanExpiry();
+        }
+        if (
+            recoveryConfig.expiry - recoveryConfig.delay <
+            MINIMUM_RECOVERY_WINDOW
+        ) {
+            revert RecoveryWindowTooShort();
+        }
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -522,6 +543,7 @@ contract ZkEmailRecovery is EmailAccountRecovery, IZkEmailRecovery {
     /*//////////////////////////////////////////////////////////////////////////
                                 MODIFIERS
     //////////////////////////////////////////////////////////////////////////*/
+
     modifier onlyConfiguredAccount() {
         if (guardianConfigs[msg.sender].guardianCount == 0) {
             revert AccountNotConfigured();
@@ -529,6 +551,7 @@ contract ZkEmailRecovery is EmailAccountRecovery, IZkEmailRecovery {
         _;
     }
 
+    // TODO: consider using a dedicated state variable instead of a proxy
     modifier onlyWhenNotRecovering() {
         if (recoveryRequests[msg.sender].totalWeight > 0) {
             revert RecoveryInProcess();

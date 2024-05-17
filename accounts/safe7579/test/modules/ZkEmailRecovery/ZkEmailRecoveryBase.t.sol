@@ -33,8 +33,8 @@ contract ZkEmailRecoveryBase is LaunchpadBase {
     address guardian1;
     address guardian2;
     uint256[] guardianWeights;
-    uint256 recoveryDelay;
-    uint256 recoveryExpiry;
+    uint256 delay;
+    uint256 expiry;
     uint256 threshold;
     uint templateIdx;
 
@@ -94,8 +94,8 @@ contract ZkEmailRecoveryBase is LaunchpadBase {
         guardianWeights = new uint256[](2);
         guardianWeights[0] = 1;
         guardianWeights[1] = 1;
-        recoveryDelay = 1 seconds;
-        recoveryExpiry = 2 weeks;
+        delay = 1 seconds;
+        expiry = 2 weeks;
         threshold = 2;
         templateIdx = 0;
     }

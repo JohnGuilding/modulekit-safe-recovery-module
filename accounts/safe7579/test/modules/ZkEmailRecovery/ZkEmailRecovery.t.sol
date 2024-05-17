@@ -26,12 +26,12 @@ contract ZkEmailRecoveryTest is ZkEmailRecoveryBase {
         address accountAddress = address(safe);
         IERC7579Account account = IERC7579Account(accountAddress);
 
-        // Install recovery module
+        // Install recovery module - configureRecovery is called on `onInstall`
         vm.prank(accountAddress);
         account.installModule(
             MODULE_TYPE_EXECUTOR,
             address(recoveryModule),
-            ""
+            abi.encode(guardians, guardianWeights, threshold, delay, expiry)
         );
         vm.stopPrank();
 
@@ -41,17 +41,6 @@ contract ZkEmailRecoveryTest is ZkEmailRecoveryBase {
             ""
         );
         assertTrue(isModuleInstalled);
-
-        // Setup recovery
-        vm.startPrank(accountAddress);
-        zkEmailRecovery.configureRecovery(
-            guardians,
-            guardianWeights,
-            threshold,
-            recoveryDelay,
-            recoveryExpiry
-        );
-        vm.stopPrank();
 
         // Retrieve router now module has been installed
         address router = zkEmailRecovery.getRouterForAccount(accountAddress);
@@ -127,8 +116,8 @@ contract ZkEmailRecoveryTest is ZkEmailRecoveryBase {
         assertEq(recoveryRequest.totalWeight, 1);
 
         // handle recovery request for guardian 2
-        uint256 executeAfter = block.timestamp + recoveryDelay;
-        uint256 executeBefore = block.timestamp + recoveryExpiry;
+        uint256 executeAfter = block.timestamp + delay;
+        uint256 executeBefore = block.timestamp + expiry;
         handleRecovery(
             accountAddress,
             create2Owner,
@@ -147,7 +136,7 @@ contract ZkEmailRecoveryTest is ZkEmailRecoveryBase {
         assertEq(recoveryRequest.recoveryModule, address(recoveryModule));
         assertEq(recoveryRequest.totalWeight, 2);
 
-        vm.warp(block.timestamp + recoveryDelay);
+        vm.warp(block.timestamp + delay);
 
         // Try and store invalid values
         recoveryModule.storeOwner(accountAddress, owner, address(1));
