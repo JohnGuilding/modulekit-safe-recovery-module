@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
-import "../../Launchpad.t.sol";
+import "../Launchpad.t.sol";
 import "forge-std/console2.sol";
 import {MODULE_TYPE_EXECUTOR} from "erc7579/interfaces/IERC7579Module.sol";
 import {ECDSAOwnedDKIMRegistry} from "ether-email-auth/packages/contracts/src/utils/ECDSAOwnedDKIMRegistry.sol";
 import {EmailAuth, EmailAuthMsg, EmailProof} from "ether-email-auth/packages/contracts/src/EmailAuth.sol";
 import {ECDSA} from "solady/utils/ECDSA.sol";
 
-import {ZkEmailRecovery} from "src/modules/ZkEmailRecovery/ZkEmailRecovery.sol";
-import {SafeRecoveryModule} from "src/modules/SafeRecoveryModule.sol";
-import {IZkEmailRecovery} from "src/interfaces/IZkEmailRecovery.sol";
-import {IEmailAccountRecovery} from "src/modules/ZkEmailRecovery/EmailAccountRecoveryRouter.sol";
-import {MockGroth16Verifier} from "../../mocks/MockGroth16Verifier.sol";
+import {ZkEmailRecovery} from "src/ZkEmailRecovery/ZkEmailRecovery.sol";
+import {SafeRecoveryModule} from "src/ZkEmailRecovery/modules/SafeRecoveryModule.sol";
+import {IZkEmailRecovery} from "src/ZkEmailRecovery/interfaces/IZkEmailRecovery.sol";
+import {IEmailAccountRecovery} from "src/ZkEmailRecovery/EmailAccountRecoveryRouter.sol";
+import {MockGroth16Verifier} from "../mocks/MockGroth16Verifier.sol";
 
 contract ZkEmailRecoveryBase is LaunchpadBase {
     // ZK Email contracts and variables

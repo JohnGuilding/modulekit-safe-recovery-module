@@ -3,11 +3,12 @@ pragma solidity ^0.8.23;
 
 import {PackedUserOperation} from "@rhinestone/modulekit/src/external/ERC4337.sol";
 import {EmailAccountRecovery} from "ether-email-auth/packages/contracts/src/EmailAccountRecovery.sol";
-import {IZkEmailRecovery} from "../../interfaces/IZkEmailRecovery.sol";
-import {EmailAccountRecoveryRouter} from "./EmailAccountRecoveryRouter.sol";
 import {Create2} from "@openzeppelin/contracts/utils/Create2.sol";
+import {IZkEmailRecovery} from "./interfaces/IZkEmailRecovery.sol";
+import {EmailAccountRecoveryRouter} from "./EmailAccountRecoveryRouter.sol";
 
 import "forge-std/console2.sol";
+
 interface IRecoveryModule {
     function recover(address account, address newOwner) external;
 }

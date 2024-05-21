@@ -2,8 +2,8 @@
 pragma solidity ^0.8.23;
 
 import "forge-std/console2.sol";
-import {ZkEmailRecoveryBase} from "../ZkEmailRecoveryBase.t.sol";
-import {ZkEmailRecovery} from "src/modules/ZkEmailRecovery/ZkEmailRecovery.sol";
+import {ZkEmailRecoveryBase} from "../../ZkEmailRecoveryBase.t.sol";
+import {ZkEmailRecovery} from "src/ZkEmailRecovery/ZkEmailRecovery.sol";
 
 contract ZkEmailRecovery_constructor_Test is ZkEmailRecoveryBase {
     function setUp() public override {

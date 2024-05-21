@@ -10,14 +10,14 @@ import {EmailAuth, EmailAuthMsg, EmailProof} from "ether-email-auth/packages/con
 import {ECDSA} from "solady/utils/ECDSA.sol";
 import {Safe} from "@safe-global/safe-contracts/contracts/Safe.sol";
 
-import {ZkEmailRecovery} from "src/modules/ZkEmailRecovery/ZkEmailRecovery.sol";
-import {IEmailAccountRecovery} from "src/modules/ZkEmailRecovery/EmailAccountRecoveryRouter.sol";
-import {IZkEmailRecovery} from "src/interfaces/IZkEmailRecovery.sol";
+import {ZkEmailRecovery} from "src/ZkEmailRecovery/ZkEmailRecovery.sol";
+import {IEmailAccountRecovery} from "src/ZkEmailRecovery/EmailAccountRecoveryRouter.sol";
+import {IZkEmailRecovery} from "src/ZkEmailRecovery/interfaces/IZkEmailRecovery.sol";
 
 import {ZkEmailRecoveryBase} from "../ZkEmailRecoveryBase.t.sol";
-import {MockGroth16Verifier} from "../../../mocks/MockGroth16Verifier.sol";
+import {MockGroth16Verifier} from "../../mocks/MockGroth16Verifier.sol";
 
-contract ZkEmailRecovery_Integration_Test is ZkEmailRecoveryBase {
+contract SafeRecoveryModule_Integration_Test is ZkEmailRecoveryBase {
     function setUp() public override {
         super.setUp();
     }
