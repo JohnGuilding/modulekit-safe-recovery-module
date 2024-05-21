@@ -11,7 +11,7 @@ import {ECDSA} from "solady/utils/ECDSA.sol";
 import {Safe} from "@safe-global/safe-contracts/contracts/Safe.sol";
 
 import {ZkEmailRecovery} from "src/ZkEmailRecovery/ZkEmailRecovery.sol";
-import {IEmailAccountRecovery} from "src/ZkEmailRecovery/EmailAccountRecoveryRouter.sol";
+import {IEmailAccountRecovery} from "src/ZkEmailRecovery/interfaces/IEmailAccountRecovery.sol";
 import {IZkEmailRecovery} from "src/ZkEmailRecovery/interfaces/IZkEmailRecovery.sol";
 
 import {ZkEmailRecoveryBase} from "../ZkEmailRecoveryBase.t.sol";
