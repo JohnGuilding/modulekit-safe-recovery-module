@@ -19,6 +19,7 @@ contract ZkEmailRecoveryBase is LaunchpadBase {
     address zkEmailDeployer = vm.addr(1);
     ECDSAOwnedDKIMRegistry ecdsaOwnedDkimRegistry;
     MockGroth16Verifier verifier;
+    EmailAuth emailAuthImpl;
     ZkEmailRecovery zkEmailRecovery;
     bytes32 accountSalt1;
     bytes32 accountSalt2;
@@ -68,7 +69,7 @@ contract ZkEmailRecoveryBase is LaunchpadBase {
         );
 
         verifier = new MockGroth16Verifier();
-        EmailAuth emailAuthImpl = new EmailAuth();
+        emailAuthImpl = new EmailAuth();
         vm.stopPrank();
 
         zkEmailRecovery = new ZkEmailRecovery(
