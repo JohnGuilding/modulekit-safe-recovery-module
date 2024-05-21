@@ -487,21 +487,13 @@ contract ZkEmailRecovery is EmailAccountRecovery, IZkEmailRecovery {
             revert InvalidGuardianAddress();
         }
 
-        if (newGuardianStatus == GuardianStatus.REQUESTED) {
-            revert AddressAlreadyRequested();
-        }
-
-        if (newGuardianStatus == GuardianStatus.ACCEPTED) {
+        if (newGuardianStatus != GuardianStatus.NONE) {
             revert AddressAlreadyGuardian();
         }
 
         GuardianStorage memory oldGuardianStorage = guardianStorage[account][
             oldGuardian
         ];
-
-        if (oldGuardianStorage.status == GuardianStatus.REQUESTED) {
-            revert AddressAlreadyRequested();
-        }
 
         guardianStorage[account][newGuardian] = GuardianStorage(
             GuardianStatus.REQUESTED,

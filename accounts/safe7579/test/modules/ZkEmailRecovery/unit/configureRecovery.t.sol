@@ -11,7 +11,7 @@ contract ZkEmailRecovery_configureRecovery_Test is ZkEmailRecoveryBase {
         super.setUp();
     }
 
-    function test_revertWhen_AlreadyRecovering() public {
+    function test_RevertWhen_AlreadyRecovering() public {
         address accountAddress = address(safe);
         vm.startPrank(accountAddress);
         zkEmailRecovery.configureRecovery(
@@ -70,7 +70,7 @@ contract ZkEmailRecovery_configureRecovery_Test is ZkEmailRecoveryBase {
         vm.stopPrank();
     }
 
-    function test_configureRecovery_succeeds() public {
+    function test_ConfigureRecovery_Succeeds() public {
         address accountAddress = address(safe);
 
         address expectedRouterAddress = zkEmailRecovery.computeRouterAddress(
