@@ -14,10 +14,10 @@ import {ZkEmailRecovery} from "src/modules/ZkEmailRecovery/ZkEmailRecovery.sol";
 import {IEmailAccountRecovery} from "src/modules/ZkEmailRecovery/EmailAccountRecoveryRouter.sol";
 import {IZkEmailRecovery} from "src/interfaces/IZkEmailRecovery.sol";
 
-import {ZkEmailRecoveryBase} from "./ZkEmailRecoveryBase.t.sol";
-import {MockGroth16Verifier} from "../../mocks/MockGroth16Verifier.sol";
+import {ZkEmailRecoveryBase} from "../ZkEmailRecoveryBase.t.sol";
+import {MockGroth16Verifier} from "../../../mocks/MockGroth16Verifier.sol";
 
-contract ZkEmailRecoveryTest is ZkEmailRecoveryBase {
+contract ZkEmailRecovery_Integration_Test is ZkEmailRecoveryBase {
     function setUp() public override {
         super.setUp();
     }

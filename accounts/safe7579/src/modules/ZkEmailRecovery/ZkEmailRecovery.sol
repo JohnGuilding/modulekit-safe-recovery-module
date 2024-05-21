@@ -5,6 +5,8 @@ import {PackedUserOperation} from "@rhinestone/modulekit/src/external/ERC4337.so
 import {EmailAccountRecovery} from "ether-email-auth/packages/contracts/src/EmailAccountRecovery.sol";
 import {IZkEmailRecovery} from "../../interfaces/IZkEmailRecovery.sol";
 import {EmailAccountRecoveryRouter} from "./EmailAccountRecoveryRouter.sol";
+import {Create2} from "@openzeppelin/contracts/utils/Create2.sol";
+
 import "forge-std/console2.sol";
 interface IRecoveryModule {
     function recover(address account, address newOwner) external;
@@ -594,6 +596,19 @@ contract ZkEmailRecovery is EmailAccountRecovery, IZkEmailRecovery {
         return accountToRouter[account];
     }
 
+    function computeRouterAddress(bytes32 salt) public view returns (address) {
+        return
+            Create2.computeAddress(
+                salt,
+                keccak256(
+                    abi.encodePacked(
+                        type(EmailAccountRecoveryRouter).creationCode,
+                        abi.encode(address(this))
+                    )
+                )
+            );
+    }
+
     function deployRouterForAccount(
         address account
     ) internal returns (address) {
@@ -601,9 +616,9 @@ contract ZkEmailRecovery is EmailAccountRecovery, IZkEmailRecovery {
             revert RouterAlreadyDeployed();
         }
 
-        EmailAccountRecoveryRouter emailAccountRecoveryRouter = new EmailAccountRecoveryRouter(
-                address(this)
-            );
+        EmailAccountRecoveryRouter emailAccountRecoveryRouter = new EmailAccountRecoveryRouter{
+                salt: keccak256(abi.encode(account))
+            }(address(this));
         address routerAddress = address(emailAccountRecoveryRouter);
 
         routerToAccount[routerAddress] = account;
