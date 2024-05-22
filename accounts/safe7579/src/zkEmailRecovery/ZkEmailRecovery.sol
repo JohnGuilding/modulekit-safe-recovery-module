@@ -10,38 +10,6 @@ import {EmailAccountRecoveryRouter} from "./EmailAccountRecoveryRouter.sol";
 
 contract ZkEmailRecovery is EmailAccountRecovery, IZkEmailRecovery {
     /*//////////////////////////////////////////////////////////////////////////
-                                TYPE DELARATIONS
-    //////////////////////////////////////////////////////////////////////////*/
-
-    struct RecoveryConfig {
-        uint256 delay; // the time from when recovery is started until the recovery request can be executed
-        uint256 expiry; // the time from when recovery is started until the recovery request becomes invalid
-    }
-    struct RecoveryRequest {
-        uint256 executeAfter; // the timestamp from which the recovery request can be executed
-        uint256 executeBefore; // the timestamp from which the recovery request becomes invalid
-        uint256 totalWeight; // total weight of all guardian approvals for the recovery request
-        address newOwner;
-        address recoveryModule; // the trusted recovery module that has permission to recover an account
-    }
-
-    struct GuardianConfig {
-        uint256 guardianCount;
-        uint256 threshold;
-    }
-
-    struct GuardianStorage {
-        GuardianStatus status;
-        uint256 weight;
-    }
-
-    enum GuardianStatus {
-        NONE,
-        REQUESTED,
-        ACCEPTED
-    }
-
-    /*//////////////////////////////////////////////////////////////////////////
                                 STATE VARIABLES
     //////////////////////////////////////////////////////////////////////////*/
 
@@ -66,64 +34,6 @@ contract ZkEmailRecovery is EmailAccountRecovery, IZkEmailRecovery {
     /** Account address to email account recovery router address */
     /** These are stored for frontends to easily find the router contract address from the given account account address */
     mapping(address => address) internal accountToRouter;
-
-    /*//////////////////////////////////////////////////////////////////////////
-                                    EVENTS
-    //////////////////////////////////////////////////////////////////////////*/
-
-    event RecoveryConfigured(
-        address indexed account,
-        uint256 guardianCount,
-        address router
-    );
-    event RecoveryProcessed(
-        address indexed account,
-        uint256 executeAfter,
-        uint256 executeBefore
-    );
-    event RecoveryCompleted(address indexed account);
-    event RecoveryCancelled(address indexed account);
-
-    /** Guardian logic events  */
-    event AddedGuardian(address indexed guardian);
-    event RemovedGuardian(address indexed guardian);
-    event ChangedThreshold(uint256 threshold);
-
-    /*//////////////////////////////////////////////////////////////////////////
-                                    ERRORS
-    //////////////////////////////////////////////////////////////////////////*/
-
-    error AccountNotConfigured();
-    error RecoveryInProcess();
-    error InvalidGuardian();
-    error InvalidTemplateIndex();
-    error InvalidSubjectParams();
-    error InvalidGuardianStatus(
-        GuardianStatus guardianStatus,
-        GuardianStatus expectedGuardianStatus
-    );
-    error InvalidNewOwner();
-    error InvalidRecoveryModule();
-    error NotEnoughApprovals();
-    error DelayNotPassed();
-    error RecoveryRequestExpired();
-    error DelayLessThanExpiry();
-    error RecoveryWindowTooShort();
-
-    /** Guardian logic errors */
-    error SetupAlreadyCalled();
-    error ThresholdCannotExceedGuardianCount();
-    error IncorrectNumberOfWeights();
-    error ThresholdCannotBeZero();
-    error InvalidGuardianAddress();
-    error InvalidGuardianWeight();
-    error AddressAlreadyRequested();
-    error AddressAlreadyGuardian();
-    error InvalidAccountAddress();
-    error GuardianStatusMustBeDifferent();
-
-    /** Router errors */
-    error RouterAlreadyDeployed();
 
     /*//////////////////////////////////////////////////////////////////////////
                                 MODIFIERS

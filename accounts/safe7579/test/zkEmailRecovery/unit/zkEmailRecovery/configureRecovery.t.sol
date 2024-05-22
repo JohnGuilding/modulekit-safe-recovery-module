@@ -80,8 +80,7 @@ contract ZkEmailRecovery_configureRecovery_Test is ZkEmailRecoveryBase {
         vm.expectEmit();
         emit IZkEmailRecovery.RecoveryConfigured(
             accountAddress,
-            delay,
-            expiry,
+            guardians.length,
             expectedRouterAddress
         );
         vm.startPrank(accountAddress);
