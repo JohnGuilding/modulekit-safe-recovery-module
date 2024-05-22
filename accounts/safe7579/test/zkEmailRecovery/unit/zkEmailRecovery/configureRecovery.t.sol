@@ -14,7 +14,7 @@ contract ZkEmailRecovery_configureRecovery_Test is ZkEmailRecoveryBase {
     function test_RevertWhen_AlreadyRecovering() public {
         address accountAddress = address(safe);
         vm.startPrank(accountAddress);
-        zkEmailRecovery.configureRecovery(
+        safeZkEmailRecovery.configureRecovery(
             guardians,
             guardianWeights,
             threshold,
@@ -23,11 +23,13 @@ contract ZkEmailRecovery_configureRecovery_Test is ZkEmailRecoveryBase {
         );
         vm.stopPrank();
 
-        address router = zkEmailRecovery.getRouterForAccount(accountAddress);
+        address router = safeZkEmailRecovery.getRouterForAccount(
+            accountAddress
+        );
 
         acceptGuardian(
             accountAddress,
-            zkEmailRecovery,
+            safeZkEmailRecovery,
             router,
             "Accept guardian request for 0x4DBa14a50681F152EE0b74fB00e7b2b0B8e3949a",
             keccak256(abi.encode("nullifier 1")),
@@ -38,21 +40,15 @@ contract ZkEmailRecovery_configureRecovery_Test is ZkEmailRecoveryBase {
         // Time travel so that EmailAuth timestamp is valid
         vm.warp(12 seconds);
 
-        // Compute create2Owner to use in email subject
-        address create2Owner = recoveryModule.computeOwnerAddress(
-            accountAddress,
-            owner,
-            newOwner
-        );
-
         // handle recovery request for guardian
         handleRecovery(
             accountAddress,
-            create2Owner,
+            owner,
+            newOwner,
             address(recoveryModule),
             router,
-            zkEmailRecovery,
-            "Recover account 0x4DBa14a50681F152EE0b74fB00e7b2b0B8e3949a to new owner 0x02e61FdCBeBC01f21FbaA538F41F90D6Abb726AC using recovery module 0x1fC14F21b27579f4F23578731cD361CCa8aa39f7",
+            safeZkEmailRecovery,
+            "Recover account 0x4DBa14a50681F152EE0b74fB00e7b2b0B8e3949a from old owner 0x7C8913d493892928d19F932FB1893404b6f1cE73 to new owner 0x11A5669986B1fCBfcE54be4c543975b33D89856D using recovery module 0x1fC14F21b27579f4F23578731cD361CCa8aa39f7",
             keccak256(abi.encode("nullifier 2")),
             accountSalt1,
             templateIdx
@@ -60,7 +56,7 @@ contract ZkEmailRecovery_configureRecovery_Test is ZkEmailRecoveryBase {
 
         vm.expectRevert(IZkEmailRecovery.RecoveryInProcess.selector);
         vm.startPrank(accountAddress);
-        zkEmailRecovery.configureRecovery(
+        safeZkEmailRecovery.configureRecovery(
             guardians,
             guardianWeights,
             threshold,
@@ -73,9 +69,8 @@ contract ZkEmailRecovery_configureRecovery_Test is ZkEmailRecoveryBase {
     function test_ConfigureRecovery_Succeeds() public {
         address accountAddress = address(safe);
 
-        address expectedRouterAddress = zkEmailRecovery.computeRouterAddress(
-            keccak256(abi.encode(accountAddress))
-        );
+        address expectedRouterAddress = safeZkEmailRecovery
+            .computeRouterAddress(keccak256(abi.encode(accountAddress)));
 
         vm.expectEmit();
         emit IZkEmailRecovery.RecoveryConfigured(
@@ -84,7 +79,7 @@ contract ZkEmailRecovery_configureRecovery_Test is ZkEmailRecoveryBase {
             expectedRouterAddress
         );
         vm.startPrank(accountAddress);
-        zkEmailRecovery.configureRecovery(
+        safeZkEmailRecovery.configureRecovery(
             guardians,
             guardianWeights,
             threshold,
@@ -93,17 +88,21 @@ contract ZkEmailRecovery_configureRecovery_Test is ZkEmailRecoveryBase {
         );
         vm.stopPrank();
 
-        IZkEmailRecovery.RecoveryConfig memory recoveryConfig = zkEmailRecovery
-            .getRecoveryConfig(accountAddress);
+        IZkEmailRecovery.RecoveryConfig
+            memory recoveryConfig = safeZkEmailRecovery.getRecoveryConfig(
+                accountAddress
+            );
         assertEq(recoveryConfig.delay, delay);
         assertEq(recoveryConfig.expiry, expiry);
 
-        IZkEmailRecovery.GuardianConfig memory guardianConfig = zkEmailRecovery
-            .getGuardianConfig(accountAddress);
+        IZkEmailRecovery.GuardianConfig
+            memory guardianConfig = safeZkEmailRecovery.getGuardianConfig(
+                accountAddress
+            );
         assertEq(guardianConfig.guardianCount, guardians.length);
         assertEq(guardianConfig.threshold, threshold);
 
-        IZkEmailRecovery.GuardianStorage memory guardian = zkEmailRecovery
+        IZkEmailRecovery.GuardianStorage memory guardian = safeZkEmailRecovery
             .getGuardian(accountAddress, guardians[0]);
         assertEq(
             uint256(guardian.status),
@@ -111,12 +110,12 @@ contract ZkEmailRecovery_configureRecovery_Test is ZkEmailRecoveryBase {
         );
         assertEq(guardian.weight, guardianWeights[0]);
 
-        address accountForRouter = zkEmailRecovery.getAccountForRouter(
+        address accountForRouter = safeZkEmailRecovery.getAccountForRouter(
             expectedRouterAddress
         );
         assertEq(accountForRouter, accountAddress);
 
-        address routerForAccount = zkEmailRecovery.getRouterForAccount(
+        address routerForAccount = safeZkEmailRecovery.getRouterForAccount(
             accountAddress
         );
         assertEq(routerForAccount, expectedRouterAddress);

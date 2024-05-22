@@ -18,14 +18,8 @@ contract SafeRecoveryModule is RecoveryModuleBase {
                                     CONSTANTS
     //////////////////////////////////////////////////////////////////////////*/
     error NotTrustedRecoveryContract();
-    error NoPreviousOwnersStored();
-
-    struct RecoveryInfo {
-        address oldOwner;
-        address newOwner;
-    }
-
-    mapping(address => RecoveryInfo) public recoveryInfo;
+    error InvalidOldOwner();
+    error InvalidNewOwner();
 
     constructor(
         address _zkEmailRecovery
@@ -81,37 +75,32 @@ contract SafeRecoveryModule is RecoveryModuleBase {
                                      MODULE LOGIC
     //////////////////////////////////////////////////////////////////////////*/
 
-    function storeOwner(
+    function recover(
         address account,
-        address oldOwner,
-        address newOwner
-    ) external {
-        address create2Owner = computeOwnerAddress(account, oldOwner, newOwner);
-        recoveryInfo[create2Owner] = RecoveryInfo(oldOwner, newOwner);
-    }
-
-    function recover(address account, address create2Owner) external override {
+        bytes[] memory subjectParams
+    ) external override {
         if (msg.sender != zkEmailRecovery) {
             revert NotTrustedRecoveryContract();
         }
 
-        RecoveryInfo memory addressInfo = recoveryInfo[create2Owner];
-
-        if (
-            addressInfo.newOwner == address(0) ||
-            addressInfo.oldOwner == address(0)
-        ) {
-            revert NoPreviousOwnersStored();
+        address oldOwner = abi.decode(subjectParams[1], (address));
+        address newOwner = abi.decode(subjectParams[2], (address));
+        if (oldOwner == address(0)) {
+            revert InvalidOldOwner();
         }
+        if (newOwner == address(0)) {
+            revert InvalidNewOwner();
+        }
+
         address previousOwnerInLinkedList = getPreviousOwnerInLinkedList(
             account,
-            addressInfo.oldOwner
+            oldOwner
         );
         bytes memory encodedSwapOwnerCall = abi.encodeWithSignature(
             "swapOwner(address,address,address)",
             previousOwnerInLinkedList,
-            addressInfo.oldOwner,
-            addressInfo.newOwner
+            oldOwner,
+            newOwner
         );
         IERC7579Account(account).executeFromExecutor(
             ModeLib.encodeSimpleSingle(),
@@ -141,19 +130,6 @@ contract SafeRecoveryModule is RecoveryModuleBase {
         }
         address sentinelOwner = address(0x1);
         return oldOwnerIndex == 0 ? sentinelOwner : owners[oldOwnerIndex - 1];
-    }
-
-    function computeOwnerAddress(
-        address account,
-        address oldOwner,
-        address newOwner
-    ) public returns (address) {
-        // Having a secure salt doesn't matter here as the randomness comes from the
-        // combination of addresses - importantly, the newOwner address, which should
-        // not be known before the account needs to be recovered.
-        bytes32 salt = keccak256(abi.encode(account));
-        bytes32 ownerHash = keccak256(abi.encode(oldOwner, newOwner));
-        return Create2.computeAddress(salt, ownerHash);
     }
 
     /*//////////////////////////////////////////////////////////////////////////

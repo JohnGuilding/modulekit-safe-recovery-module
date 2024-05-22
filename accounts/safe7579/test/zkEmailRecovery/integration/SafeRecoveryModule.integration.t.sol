@@ -43,12 +43,14 @@ contract SafeRecoveryModule_Integration_Test is ZkEmailRecoveryBase {
         assertTrue(isModuleInstalled);
 
         // Retrieve router now module has been installed
-        address router = zkEmailRecovery.getRouterForAccount(accountAddress);
+        address router = safeZkEmailRecovery.getRouterForAccount(
+            accountAddress
+        );
 
         // Accept guardian
         acceptGuardian(
             accountAddress,
-            zkEmailRecovery,
+            safeZkEmailRecovery,
             router,
             "Accept guardian request for 0x4DBa14a50681F152EE0b74fB00e7b2b0B8e3949a",
             keccak256(abi.encode("nullifier 1")),
@@ -56,7 +58,7 @@ contract SafeRecoveryModule_Integration_Test is ZkEmailRecoveryBase {
             templateIdx
         );
         IZkEmailRecovery.GuardianStorage
-            memory guardianStorage1 = zkEmailRecovery.getGuardian(
+            memory guardianStorage1 = safeZkEmailRecovery.getGuardian(
                 accountAddress,
                 guardian1
             );
@@ -69,7 +71,7 @@ contract SafeRecoveryModule_Integration_Test is ZkEmailRecoveryBase {
         // Accept guardian
         acceptGuardian(
             accountAddress,
-            zkEmailRecovery,
+            safeZkEmailRecovery,
             router,
             "Accept guardian request for 0x4DBa14a50681F152EE0b74fB00e7b2b0B8e3949a",
             keccak256(abi.encode("nullifier 1")),
@@ -77,7 +79,7 @@ contract SafeRecoveryModule_Integration_Test is ZkEmailRecoveryBase {
             templateIdx
         );
         IZkEmailRecovery.GuardianStorage
-            memory guardianStorage2 = zkEmailRecovery.getGuardian(
+            memory guardianStorage2 = safeZkEmailRecovery.getGuardian(
                 accountAddress,
                 guardian2
             );
@@ -90,27 +92,21 @@ contract SafeRecoveryModule_Integration_Test is ZkEmailRecoveryBase {
         // Time travel so that EmailAuth timestamp is valid
         vm.warp(12 seconds);
 
-        // Compute create2Owner to use in email subject
-        address create2Owner = recoveryModule.computeOwnerAddress(
-            accountAddress,
-            owner,
-            newOwner
-        );
-
         // handle recovery request for guardian 1
         handleRecovery(
             accountAddress,
-            create2Owner,
+            owner,
+            newOwner,
             address(recoveryModule),
             router,
-            zkEmailRecovery,
-            "Recover account 0x4DBa14a50681F152EE0b74fB00e7b2b0B8e3949a to new owner 0x02e61FdCBeBC01f21FbaA538F41F90D6Abb726AC using recovery module 0x1fC14F21b27579f4F23578731cD361CCa8aa39f7",
+            safeZkEmailRecovery,
+            "Recover account 0x4DBa14a50681F152EE0b74fB00e7b2b0B8e3949a from old owner 0x7C8913d493892928d19F932FB1893404b6f1cE73 to new owner 0x11A5669986B1fCBfcE54be4c543975b33D89856D using recovery module 0x1fC14F21b27579f4F23578731cD361CCa8aa39f7",
             keccak256(abi.encode("nullifier 2")),
             accountSalt1,
             templateIdx
         );
         IZkEmailRecovery.RecoveryRequest
-            memory recoveryRequest = zkEmailRecovery.getRecoveryRequest(
+            memory recoveryRequest = safeZkEmailRecovery.getRecoveryRequest(
                 accountAddress
             );
         assertEq(recoveryRequest.totalWeight, 1);
@@ -120,39 +116,44 @@ contract SafeRecoveryModule_Integration_Test is ZkEmailRecoveryBase {
         uint256 executeBefore = block.timestamp + expiry;
         handleRecovery(
             accountAddress,
-            create2Owner,
+            owner,
+            newOwner,
             address(recoveryModule),
             router,
-            zkEmailRecovery,
-            "Recover account 0x4DBa14a50681F152EE0b74fB00e7b2b0B8e3949a to new owner 0x02e61FdCBeBC01f21FbaA538F41F90D6Abb726AC using recovery module 0x1fC14F21b27579f4F23578731cD361CCa8aa39f7",
+            safeZkEmailRecovery,
+            "Recover account 0x4DBa14a50681F152EE0b74fB00e7b2b0B8e3949a from old owner 0x7C8913d493892928d19F932FB1893404b6f1cE73 to new owner 0x11A5669986B1fCBfcE54be4c543975b33D89856D using recovery module 0x1fC14F21b27579f4F23578731cD361CCa8aa39f7",
             keccak256(abi.encode("nullifier 2")),
             accountSalt2,
             templateIdx
         );
-        recoveryRequest = zkEmailRecovery.getRecoveryRequest(accountAddress);
+        recoveryRequest = safeZkEmailRecovery.getRecoveryRequest(
+            accountAddress
+        );
         assertEq(recoveryRequest.executeAfter, executeAfter);
         assertEq(recoveryRequest.executeBefore, executeBefore);
-        assertEq(recoveryRequest.newOwner, create2Owner);
+        assertEq(
+            recoveryRequest.subjectParams,
+            subjectParamsForRecovery(
+                accountAddress,
+                owner,
+                newOwner,
+                address(recoveryModule)
+            )
+        );
         assertEq(recoveryRequest.recoveryModule, address(recoveryModule));
         assertEq(recoveryRequest.totalWeight, 2);
 
         vm.warp(block.timestamp + delay);
 
-        // Try and store invalid values
-        recoveryModule.storeOwner(accountAddress, owner, address(1));
-        recoveryModule.storeOwner(accountAddress, address(1), newOwner);
-        recoveryModule.storeOwner(address(1), owner, newOwner);
-
-        // Store old owner on recovery module
-        recoveryModule.storeOwner(accountAddress, owner, newOwner);
-
         // Complete recovery
         IEmailAccountRecovery(router).completeRecovery();
 
-        recoveryRequest = zkEmailRecovery.getRecoveryRequest(accountAddress);
+        recoveryRequest = safeZkEmailRecovery.getRecoveryRequest(
+            accountAddress
+        );
         assertEq(recoveryRequest.executeAfter, 0);
         assertEq(recoveryRequest.executeBefore, 0);
-        assertEq(recoveryRequest.newOwner, address(0));
+        assertEq(recoveryRequest.subjectParams, new bytes[](0));
         assertEq(recoveryRequest.recoveryModule, address(0));
         assertEq(recoveryRequest.totalWeight, 0);
 

@@ -9,6 +9,7 @@ import {EmailAuth, EmailAuthMsg, EmailProof} from "ether-email-auth/packages/con
 import {ECDSA} from "solady/utils/ECDSA.sol";
 
 import {ZkEmailRecovery} from "src/ZkEmailRecovery/ZkEmailRecovery.sol";
+import {SafeZkEmailRecovery} from "src/ZkEmailRecovery/SafeZkEmailRecovery.sol";
 import {SafeRecoveryModule} from "src/ZkEmailRecovery/modules/SafeRecoveryModule.sol";
 import {IZkEmailRecovery} from "src/ZkEmailRecovery/interfaces/IZkEmailRecovery.sol";
 import {IEmailAccountRecovery} from "src/ZkEmailRecovery/interfaces/IEmailAccountRecovery.sol";
@@ -20,7 +21,7 @@ contract ZkEmailRecoveryBase is LaunchpadBase {
     ECDSAOwnedDKIMRegistry ecdsaOwnedDkimRegistry;
     MockGroth16Verifier verifier;
     EmailAuth emailAuthImpl;
-    ZkEmailRecovery zkEmailRecovery;
+    SafeZkEmailRecovery safeZkEmailRecovery;
     bytes32 accountSalt1;
     bytes32 accountSalt2;
 
@@ -72,12 +73,12 @@ contract ZkEmailRecoveryBase is LaunchpadBase {
         emailAuthImpl = new EmailAuth();
         vm.stopPrank();
 
-        zkEmailRecovery = new ZkEmailRecovery(
+        safeZkEmailRecovery = new SafeZkEmailRecovery(
             address(verifier),
             address(ecdsaOwnedDkimRegistry),
             address(emailAuthImpl)
         );
-        recoveryModule = new SafeRecoveryModule(address(zkEmailRecovery));
+        recoveryModule = new SafeRecoveryModule(address(safeZkEmailRecovery));
 
         owner = signer1.addr;
         newOwner = signer2.addr;
@@ -85,8 +86,8 @@ contract ZkEmailRecoveryBase is LaunchpadBase {
         // Compute guardian addresses
         accountSalt1 = keccak256(abi.encode("account salt 1"));
         accountSalt2 = keccak256(abi.encode("account salt 2"));
-        guardian1 = zkEmailRecovery.computeEmailAuthAddress(accountSalt1);
-        guardian2 = zkEmailRecovery.computeEmailAuthAddress(accountSalt2);
+        guardian1 = safeZkEmailRecovery.computeEmailAuthAddress(accountSalt1);
+        guardian2 = safeZkEmailRecovery.computeEmailAuthAddress(accountSalt2);
 
         // Set recovery config variables
         guardians = new address[](2);
@@ -125,7 +126,7 @@ contract ZkEmailRecoveryBase is LaunchpadBase {
 
     function acceptGuardian(
         address account,
-        ZkEmailRecovery zkEmailRecovery,
+        SafeZkEmailRecovery safeZkEmailRecovery,
         address router,
         string memory subject,
         bytes32 nullifier,
@@ -138,10 +139,12 @@ contract ZkEmailRecoveryBase is LaunchpadBase {
             accountSalt
         );
 
-        bytes[] memory subjectParamsForAcceptance = new bytes[](1);
-        subjectParamsForAcceptance[0] = abi.encode(account);
+        bytes[] memory subjectParamsForAcceptance = subjectParamsForAcceptance(
+            account
+        );
+
         EmailAuthMsg memory emailAuthMsg = EmailAuthMsg({
-            templateId: zkEmailRecovery.computeAcceptanceTemplateId(
+            templateId: safeZkEmailRecovery.computeAcceptanceTemplateId(
                 templateIdx
             ),
             subjectParams: subjectParamsForAcceptance,
@@ -156,10 +159,11 @@ contract ZkEmailRecoveryBase is LaunchpadBase {
 
     function handleRecovery(
         address account,
+        address oldOwner,
         address newOwner,
         address recoveryModule,
         address router,
-        ZkEmailRecovery zkEmailRecovery,
+        SafeZkEmailRecovery safeZkEmailRecovery,
         string memory subject,
         bytes32 nullifier,
         bytes32 accountSalt,
@@ -171,17 +175,43 @@ contract ZkEmailRecoveryBase is LaunchpadBase {
             accountSalt
         );
 
-        bytes[] memory subjectParamsForRecovery = new bytes[](3);
-        subjectParamsForRecovery[0] = abi.encode(account);
-        subjectParamsForRecovery[1] = abi.encode(newOwner);
-        subjectParamsForRecovery[2] = abi.encode(recoveryModule);
+        bytes[] memory subjectParamsForRecovery = subjectParamsForRecovery(
+            account,
+            oldOwner,
+            newOwner,
+            recoveryModule
+        );
 
         EmailAuthMsg memory emailAuthMsg = EmailAuthMsg({
-            templateId: zkEmailRecovery.computeRecoveryTemplateId(templateIdx),
+            templateId: safeZkEmailRecovery.computeRecoveryTemplateId(
+                templateIdx
+            ),
             subjectParams: subjectParamsForRecovery,
             skipedSubjectPrefix: 0,
             proof: emailProof
         });
         IEmailAccountRecovery(router).handleRecovery(emailAuthMsg, templateIdx);
+    }
+
+    function subjectParamsForAcceptance(
+        address account
+    ) public returns (bytes[] memory) {
+        bytes[] memory subjectParamsForAcceptance = new bytes[](1);
+        subjectParamsForAcceptance[0] = abi.encode(account);
+        return subjectParamsForAcceptance;
+    }
+
+    function subjectParamsForRecovery(
+        address account,
+        address oldOwner,
+        address newOwner,
+        address recoveryModule
+    ) public returns (bytes[] memory) {
+        bytes[] memory subjectParamsForRecovery = new bytes[](4);
+        subjectParamsForRecovery[0] = abi.encode(account);
+        subjectParamsForRecovery[1] = abi.encode(oldOwner);
+        subjectParamsForRecovery[2] = abi.encode(newOwner);
+        subjectParamsForRecovery[3] = abi.encode(recoveryModule);
+        return subjectParamsForRecovery;
     }
 }

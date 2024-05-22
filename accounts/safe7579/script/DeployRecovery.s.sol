@@ -2,7 +2,7 @@
 pragma solidity ^0.8.19;
 
 import {Script} from "forge-std/Script.sol";
-import {ZkEmailRecovery} from "src/zkEmailRecovery/ZkEmailRecovery.sol";
+import {SafeZkEmailRecovery} from "src/zkEmailRecovery/SafeZkEmailRecovery.sol";
 import {SafeRecoveryModule} from "src/zkEmailRecovery/modules/SafeRecoveryModule.sol";
 
 contract DeployRecoveryScript is Script {
@@ -15,12 +15,10 @@ contract DeployRecoveryScript is Script {
 
         vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
 
-        ZkEmailRecovery zkEmailRecovery = new ZkEmailRecovery{salt: salt}(
-            verifier,
-            ecdsaOwnedDkimRegistry,
-            emailAuthImpl
-        );
-        new SafeRecoveryModule{salt: salt}(address(zkEmailRecovery));
+        SafeZkEmailRecovery safeZkEmailRecovery = new SafeZkEmailRecovery{
+            salt: salt
+        }(verifier, ecdsaOwnedDkimRegistry, emailAuthImpl);
+        new SafeRecoveryModule{salt: salt}(address(safeZkEmailRecovery));
 
         vm.stopBroadcast();
     }
