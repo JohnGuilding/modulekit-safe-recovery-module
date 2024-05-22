@@ -15,4 +15,9 @@ quote_style = "double"
 tab_width = 4
 wrap_comments = true
 
+[rpc_endpoints]
+baseSepolia = "${BASE_SEPOLIA_RPC_URL}"
+
+[etherscan]
+baseSepolia = { key = "${BASE_SCAN_API_KEY}" }
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
