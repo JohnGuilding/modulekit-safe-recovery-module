@@ -5,6 +5,8 @@ import {PackedUserOperation} from "@rhinestone/modulekit/src/external/ERC4337.so
 import {EmailAccountRecovery} from "ether-email-auth/packages/contracts/src/EmailAccountRecovery.sol";
 import {Create2} from "@openzeppelin/contracts/utils/Create2.sol";
 import {IZkEmailRecovery} from "./interfaces/IZkEmailRecovery.sol";
+import {IEmailAuth} from "./interfaces/IEmailAuth.sol";
+import {IUUPSUpgradable} from "./interfaces/IUUPSUpgradable.sol";
 import {IRecoveryModule} from "./interfaces/IRecoveryModule.sol";
 import {EmailAccountRecoveryRouter} from "./EmailAccountRecoveryRouter.sol";
 
@@ -50,6 +52,14 @@ contract ZkEmailRecovery is EmailAccountRecovery, IZkEmailRecovery {
     modifier onlyWhenNotRecovering() {
         if (recoveryRequests[msg.sender].totalWeight > 0) {
             revert RecoveryInProcess();
+        }
+        _;
+    }
+
+    modifier onlyAccountForGuardian(address guardian) {
+        bool isGuardianForAccount = isGuardianForAccount(msg.sender, guardian);
+        if (!isGuardianForAccount) {
+            revert UnauthorizedAccountForGuardian();
         }
         _;
     }
@@ -336,7 +346,7 @@ contract ZkEmailRecovery is EmailAccountRecovery, IZkEmailRecovery {
         return guardianStorage[account][guardian];
     }
 
-    function isGuardian(
+    function isGuardianForAccount(
         address guardian,
         address account
     ) public view override returns (bool) {
@@ -620,5 +630,53 @@ contract ZkEmailRecovery is EmailAccountRecovery, IZkEmailRecovery {
         accountToRouter[account] = routerAddress;
 
         return routerAddress;
+    }
+
+    /*//////////////////////////////////////////////////////////////////////////
+                                EMAIL AUTH LOGIC
+    //////////////////////////////////////////////////////////////////////////*/
+
+    function updateGuardianDKIMRegistry(
+        address guardian,
+        address dkimRegistryAddr
+    ) external onlyAccountForGuardian(guardian) onlyWhenNotRecovering {
+        IEmailAuth(guardian).updateDKIMRegistry(dkimRegistryAddr);
+    }
+
+    function updateGuardianVerifier(
+        address guardian,
+        address verifierAddr
+    ) external onlyAccountForGuardian(guardian) onlyWhenNotRecovering {
+        IEmailAuth(guardian).updateVerifier(verifierAddr);
+    }
+
+    function updateGuardianSubjectTemplate(
+        address guardian,
+        uint templateId,
+        string[] memory subjectTemplate
+    ) external onlyAccountForGuardian(guardian) onlyWhenNotRecovering {
+        IEmailAuth(guardian).updateSubjectTemplate(templateId, subjectTemplate);
+    }
+
+    function deleteGuardianSubjectTemplate(
+        address guardian,
+        uint templateId
+    ) external onlyAccountForGuardian(guardian) onlyWhenNotRecovering {
+        IEmailAuth(guardian).deleteSubjectTemplate(templateId);
+    }
+
+    function setGuardianTimestampCheckEnabled(
+        address guardian,
+        bool enabled
+    ) external onlyAccountForGuardian(guardian) onlyWhenNotRecovering {
+        IEmailAuth(guardian).setTimestampCheckEnabled(enabled);
+    }
+
+    function upgradeEmailAuthGuardian(
+        address guardian,
+        address newImplementation,
+        bytes memory data
+    ) external onlyAccountForGuardian(guardian) onlyWhenNotRecovering {
+        IUUPSUpgradable(guardian).upgradeToAndCall(newImplementation, data);
     }
 }
