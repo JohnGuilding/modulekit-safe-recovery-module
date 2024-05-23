@@ -2,7 +2,7 @@
 pragma solidity ^0.8.23;
 
 import "forge-std/console2.sol";
-import {ZkEmailRecoveryBase} from "../ZkEmailRecoveryBase.t.sol";
+import {ZkEmailRecoveryBase} from "../../ZkEmailRecoveryBase.t.sol";
 
 // external updateGuardian()
 contract ZkEmailRecovery_updateGuardian_Test is ZkEmailRecoveryBase {

@@ -135,6 +135,8 @@ contract ZkEmailRecovery is EmailAccountRecovery, IZkEmailRecovery {
     ) internal virtual returns (address) {
         if (subjectParams.length != 1) revert InvalidSubjectParams();
 
+        // The GuardianStatus check in acceptGuardian implicitly
+        // validates the account, so no need to re-validate here
         address accountInEmail = abi.decode(subjectParams[0], (address));
 
         return accountInEmail;
@@ -145,6 +147,8 @@ contract ZkEmailRecovery is EmailAccountRecovery, IZkEmailRecovery {
     ) internal virtual returns (address, address) {
         if (subjectParams.length != 3) revert InvalidSubjectParams();
 
+        // The GuardianStatus check in processRecovery implicitly
+        // validates the account, so no need to re-validate here
         address accountInEmail = abi.decode(subjectParams[0], (address));
         address newOwnerInEmail = abi.decode(subjectParams[1], (address));
         address recoveryModuleInEmail = abi.decode(subjectParams[2], (address));
@@ -195,7 +199,8 @@ contract ZkEmailRecovery is EmailAccountRecovery, IZkEmailRecovery {
             subjectParams
         );
 
-        // This check ensures the guardian status is correct and also that the account in email is a valid account
+        // This check ensures GuardianStatus is correct and also that the
+        // account in email is a valid account
         GuardianStorage memory guardianStorage = getGuardian(
             accountInEmail,
             guardian
@@ -232,6 +237,8 @@ contract ZkEmailRecovery is EmailAccountRecovery, IZkEmailRecovery {
             address recoveryModuleInEmail
         ) = validateRecoverySubjectTemplates(subjectParams);
 
+        // This check ensures GuardianStatus is correct and also that the
+        // account in email is a valid account
         GuardianStorage memory guardian = getGuardian(accountInEmail, guardian);
         if (guardian.status != GuardianStatus.ACCEPTED) {
             revert InvalidGuardianStatus(
