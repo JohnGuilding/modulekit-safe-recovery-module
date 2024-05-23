@@ -15,6 +15,7 @@ contract ZkEmailRecovery_configureRecovery_Test is ZkEmailRecoveryBase {
         address accountAddress = address(safe);
         vm.startPrank(accountAddress);
         safeZkEmailRecovery.configureRecovery(
+            recoveryModuleAddress,
             guardians,
             guardianWeights,
             threshold,
@@ -45,7 +46,7 @@ contract ZkEmailRecovery_configureRecovery_Test is ZkEmailRecoveryBase {
             accountAddress,
             owner,
             newOwner,
-            address(recoveryModule),
+            recoveryModuleAddress,
             router,
             safeZkEmailRecovery,
             "Recover account 0x4DBa14a50681F152EE0b74fB00e7b2b0B8e3949a from old owner 0x7C8913d493892928d19F932FB1893404b6f1cE73 to new owner 0x11A5669986B1fCBfcE54be4c543975b33D89856D using recovery module 0x1fC14F21b27579f4F23578731cD361CCa8aa39f7",
@@ -57,6 +58,7 @@ contract ZkEmailRecovery_configureRecovery_Test is ZkEmailRecoveryBase {
         vm.expectRevert(IZkEmailRecovery.RecoveryInProcess.selector);
         vm.startPrank(accountAddress);
         safeZkEmailRecovery.configureRecovery(
+            recoveryModuleAddress,
             guardians,
             guardianWeights,
             threshold,
@@ -75,11 +77,13 @@ contract ZkEmailRecovery_configureRecovery_Test is ZkEmailRecoveryBase {
         vm.expectEmit();
         emit IZkEmailRecovery.RecoveryConfigured(
             accountAddress,
+            recoveryModuleAddress,
             guardians.length,
             expectedRouterAddress
         );
         vm.startPrank(accountAddress);
         safeZkEmailRecovery.configureRecovery(
+            recoveryModuleAddress,
             guardians,
             guardianWeights,
             threshold,
@@ -92,6 +96,7 @@ contract ZkEmailRecovery_configureRecovery_Test is ZkEmailRecoveryBase {
             memory recoveryConfig = safeZkEmailRecovery.getRecoveryConfig(
                 accountAddress
             );
+        assertEq(recoveryConfig.recoveryModule, recoveryModuleAddress);
         assertEq(recoveryConfig.delay, delay);
         assertEq(recoveryConfig.expiry, expiry);
 

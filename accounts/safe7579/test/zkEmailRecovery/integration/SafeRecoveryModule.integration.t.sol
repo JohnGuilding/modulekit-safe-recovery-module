@@ -30,14 +30,14 @@ contract SafeRecoveryModule_Integration_Test is ZkEmailRecoveryBase {
         vm.prank(accountAddress);
         account.installModule(
             MODULE_TYPE_EXECUTOR,
-            address(recoveryModule),
+            recoveryModuleAddress,
             abi.encode(guardians, guardianWeights, threshold, delay, expiry)
         );
         vm.stopPrank();
 
         bool isModuleInstalled = account.isModuleInstalled(
             MODULE_TYPE_EXECUTOR,
-            address(recoveryModule),
+            recoveryModuleAddress,
             ""
         );
         assertTrue(isModuleInstalled);
@@ -97,7 +97,7 @@ contract SafeRecoveryModule_Integration_Test is ZkEmailRecoveryBase {
             accountAddress,
             owner,
             newOwner,
-            address(recoveryModule),
+            recoveryModuleAddress,
             router,
             safeZkEmailRecovery,
             "Recover account 0x4DBa14a50681F152EE0b74fB00e7b2b0B8e3949a from old owner 0x7C8913d493892928d19F932FB1893404b6f1cE73 to new owner 0x11A5669986B1fCBfcE54be4c543975b33D89856D using recovery module 0x1fC14F21b27579f4F23578731cD361CCa8aa39f7",
@@ -118,7 +118,7 @@ contract SafeRecoveryModule_Integration_Test is ZkEmailRecoveryBase {
             accountAddress,
             owner,
             newOwner,
-            address(recoveryModule),
+            recoveryModuleAddress,
             router,
             safeZkEmailRecovery,
             "Recover account 0x4DBa14a50681F152EE0b74fB00e7b2b0B8e3949a from old owner 0x7C8913d493892928d19F932FB1893404b6f1cE73 to new owner 0x11A5669986B1fCBfcE54be4c543975b33D89856D using recovery module 0x1fC14F21b27579f4F23578731cD361CCa8aa39f7",
@@ -137,10 +137,9 @@ contract SafeRecoveryModule_Integration_Test is ZkEmailRecoveryBase {
                 accountAddress,
                 owner,
                 newOwner,
-                address(recoveryModule)
+                recoveryModuleAddress
             )
         );
-        assertEq(recoveryRequest.recoveryModule, address(recoveryModule));
         assertEq(recoveryRequest.totalWeight, 2);
 
         vm.warp(block.timestamp + delay);
@@ -154,7 +153,6 @@ contract SafeRecoveryModule_Integration_Test is ZkEmailRecoveryBase {
         assertEq(recoveryRequest.executeAfter, 0);
         assertEq(recoveryRequest.executeBefore, 0);
         assertEq(recoveryRequest.subjectParams, new bytes[](0));
-        assertEq(recoveryRequest.recoveryModule, address(0));
         assertEq(recoveryRequest.totalWeight, 0);
 
         vm.prank(accountAddress);

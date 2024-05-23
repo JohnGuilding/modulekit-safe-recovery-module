@@ -29,6 +29,7 @@ contract ZkEmailRecoveryBase is LaunchpadBase {
     address public newOwner;
 
     SafeRecoveryModule recoveryModule;
+    address recoveryModuleAddress;
 
     // recovery config
     address[] guardians;
@@ -79,6 +80,7 @@ contract ZkEmailRecoveryBase is LaunchpadBase {
             address(emailAuthImpl)
         );
         recoveryModule = new SafeRecoveryModule(address(safeZkEmailRecovery));
+        recoveryModuleAddress = address(recoveryModule);
 
         owner = signer1.addr;
         newOwner = signer2.addr;
