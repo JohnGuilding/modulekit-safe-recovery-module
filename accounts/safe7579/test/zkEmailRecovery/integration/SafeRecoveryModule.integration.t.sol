@@ -109,7 +109,7 @@ contract SafeRecoveryModule_Integration_Test is ZkEmailRecoveryBase {
             memory recoveryRequest = safeZkEmailRecovery.getRecoveryRequest(
                 accountAddress
             );
-        assertEq(recoveryRequest.totalWeight, 1);
+        assertEq(recoveryRequest.currentWeight, 1);
 
         // handle recovery request for guardian 2
         uint256 executeAfter = block.timestamp + delay;
@@ -140,7 +140,7 @@ contract SafeRecoveryModule_Integration_Test is ZkEmailRecoveryBase {
                 recoveryModuleAddress
             )
         );
-        assertEq(recoveryRequest.totalWeight, 2);
+        assertEq(recoveryRequest.currentWeight, 2);
 
         vm.warp(block.timestamp + delay);
 
@@ -153,7 +153,7 @@ contract SafeRecoveryModule_Integration_Test is ZkEmailRecoveryBase {
         assertEq(recoveryRequest.executeAfter, 0);
         assertEq(recoveryRequest.executeBefore, 0);
         assertEq(recoveryRequest.subjectParams, new bytes[](0));
-        assertEq(recoveryRequest.totalWeight, 0);
+        assertEq(recoveryRequest.currentWeight, 0);
 
         vm.prank(accountAddress);
         bool isOwner = Safe(payable(accountAddress)).isOwner(newOwner);
