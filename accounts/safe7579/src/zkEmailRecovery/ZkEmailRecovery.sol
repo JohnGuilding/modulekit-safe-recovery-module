@@ -279,6 +279,20 @@ contract ZkEmailRecovery is EmailAccountRecovery, IZkEmailRecovery {
         );
     }
 
+    function deInitializeRecovery() external onlyWhenNotRecovering {
+        address account = msg.sender;
+        
+        delete recoveryConfigs[account];
+        delete recoveryRequests[account];
+
+        delete guardianStorage[account][account];
+        delete guardianConfigs[account];
+
+        address accountToRouterAddr = accountToRouter[account];
+        delete accountToRouter[account];
+        delete routerToAccount[accountToRouterAddr];
+    }
+
     /**
      * @notice Accepts a guardian for the specified account. This is the second core function
      * that must be called during the end-to-end recovery flow

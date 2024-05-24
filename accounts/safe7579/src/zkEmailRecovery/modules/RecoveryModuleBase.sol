@@ -10,12 +10,6 @@ abstract contract RecoveryModuleBase is ERC7579ExecutorBase {
 
     address public immutable zkEmailRecovery;
 
-    error NotAuthorizedToRecover();
-
-    constructor(address _zkEmailRecovery) {
-        zkEmailRecovery = _zkEmailRecovery;
-    }
-
     /*//////////////////////////////////////////////////////////////////////////
                                      CONFIG
     //////////////////////////////////////////////////////////////////////////*/
@@ -24,13 +18,13 @@ abstract contract RecoveryModuleBase is ERC7579ExecutorBase {
      * Initialize the module with the given data
      * @param data The data to initialize the module with
      */
-    function onInstall(bytes calldata data) external virtual override {}
+    function onInstall(bytes calldata data) external virtual {}
 
     /**
      * De-initialize the module with the given data
      * @param data The data to de-initialize the module with
      */
-    function onUninstall(bytes calldata data) external virtual override {}
+    function onUninstall(bytes calldata data) external virtual {}
 
     /**
      * Check if the module is initialized

@@ -9,6 +9,7 @@ import {Create2} from "@openzeppelin/contracts/utils/Create2.sol";
 import {RecoveryModuleBase} from "./RecoveryModuleBase.sol";
 import {IZkEmailRecovery} from "../interfaces/IZkEmailRecovery.sol";
 import {ISafe} from "../interfaces/ISafe.sol";
+import "forge-std/console2.sol";
 
 contract SafeRecoveryModule is RecoveryModuleBase {
     /*//////////////////////////////////////////////////////////////////////////
@@ -17,10 +18,13 @@ contract SafeRecoveryModule is RecoveryModuleBase {
     error NotTrustedRecoveryContract();
     error InvalidOldOwner();
     error InvalidNewOwner();
+    error AccountNotConfigured();
 
-    constructor(
-        address _zkEmailRecovery
-    ) RecoveryModuleBase(_zkEmailRecovery) {}
+    mapping(address => bool) public accountIsConfigured;
+
+    constructor(address _zkEmailRecovery) {
+        zkEmailRecovery = _zkEmailRecovery;
+    }
 
     /*//////////////////////////////////////////////////////////////////////////
                                      CONFIG
@@ -31,6 +35,8 @@ contract SafeRecoveryModule is RecoveryModuleBase {
      * @param data The data to initialize the module with
      */
     function onInstall(bytes calldata data) external override {
+        address account = msg.sender;
+        accountIsConfigured[account] = true;
         (
             address[] memory guardians,
             uint256[] memory weights,
@@ -56,7 +62,13 @@ contract SafeRecoveryModule is RecoveryModuleBase {
      * De-initialize the module with the given data
      * @param data The data to de-initialize the module with
      */
-    function onUninstall(bytes calldata data) external override {}
+    function onUninstall(bytes calldata data) external override {
+        accountIsConfigured[msg.sender] = false;
+        bytes memory encodedCall = abi.encodeWithSignature(
+            "deInitializeRecovery()"
+        );
+        _execute(msg.sender, zkEmailRecovery, 0, encodedCall);
+    }
 
     /**
      * Check if the module is initialized
@@ -66,7 +78,7 @@ contract SafeRecoveryModule is RecoveryModuleBase {
     function isInitialized(
         address smartAccount
     ) external view override returns (bool) {
-        return false;
+        return accountIsConfigured[smartAccount];
     }
 
     /*//////////////////////////////////////////////////////////////////////////
@@ -89,6 +101,11 @@ contract SafeRecoveryModule is RecoveryModuleBase {
         }
         if (newOwner == address(0)) {
             revert InvalidNewOwner();
+        }
+
+        bool accountIsConfigured = accountIsConfigured[account];
+        if (!accountIsConfigured) {
+            revert AccountNotConfigured();
         }
 
         address previousOwnerInLinkedList = getPreviousOwnerInLinkedList(
